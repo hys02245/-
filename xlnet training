@@ -1,0 +1,101 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "accelerator": "GPU",
+    "colab": {
+      "name": "Untitled1.ipynb",
+      "provenance": [],
+      "collapsed_sections": [],
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "display_name": "Python 3",
+      "name": "python3"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/hys02245/-/blob/main/xlnet%20training\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "i_bA-tChvNoN",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "eb3dbfab-8d71-4d9c-e900-d94692148d47"
+      },
+      "source": [
+        "from google.colab import drive\n",
+        "import os\n",
+        "drive.mount('/content/gdrive')"
+      ],
+      "execution_count": 1,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Mounted at /content/gdrive\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "kW2jl3dvvRUL"
+      },
+      "source": [
+        "!pip install transformers\n",
+        "!pip install tensorboardx\n",
+        "!pip install simpletransformers"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "7U03mBxTvUhA"
+      },
+      "source": [
+        "import pandas as pd\n",
+        "import csv \n",
+        "from google.colab import files\n",
+        "from sklearn.model_selection import KFold\n",
+        "from sklearn.metrics import accuracy_score\n",
+        "from simpletransformers.model import TransformerModel\n",
+        "from sklearn.model_selection import train_test_split\n",
+        "df = pd.read_csv('gdrive/My Drive/trainingdata_fix.csv', encoding=\"latin\")\n",
+        "train,test = train_test_split(df,test_size=0.2,random_state=18) #dataframe split\n",
+        "results = []\n",
+        "n = 5                              #KFold times\n",
+        "kf = KFold(n_splits=n, random_state=55688, shuffle=True) \n",
+        "for train_index, val_index in kf.split(train):\n",
+        "  train_df= train.iloc[train_index]\n",
+        "  val_df = train.iloc[val_index]                          \n",
+        "  label_list = [\"0\",\"1\",\"2\"]      \n",
+        "  model = TransformerModel('xlnet','xlnet-base-cased',num_labels=3,args={\"save_model_every_epoch\":False,'overwrite_output_dir':True,\n",
+        "                'learning_rate':1e-5,'num_train_epochs':20,'train_batch_size':32,'output_dir': 'gdrive/My Drive/outputs/'})\n",
+        "  model.train_model(train_df)\n",
+        "  result, model_outputs, wrong_predictions = model.eval_model(val_df,acc=accuracy_score)\n",
+        "  print(result['acc'])\n",
+        "  results.append(result['acc'])\n",
+        "print(\"results\",results)\n",
+        "print(f\"Mean-Precision: {sum(results) / len(results)}\")\n"
+      ],
+      "execution_count": null,
+      "outputs": []
+    }
+  ]
+}
